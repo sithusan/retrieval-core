@@ -1,5 +1,5 @@
 [project]
-name = "Retrieval Core"
+name = "retrieval-core"
 version = "0.1.0"
 description = "Experimental information retrieval engine built to explore and evaluate classical and modern retrieval techniques for RAG systems."
 readme = "README.md"
