@@ -30,7 +30,7 @@ def search(query: str) -> None:
     foundmovies = []
 
     for movie in movies:
-        if query in movie["title"]:
+        if query.lower() in movie["title"].lower():
             foundmovies.append(movie)
             print(f"{len(foundmovies)}. {movie["title"]}")
 
