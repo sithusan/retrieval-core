@@ -30,13 +30,13 @@ def search(query: str) -> None:
     movies = loadMovies()
     foundmovies = []
 
-    processedQuery = processText(query)
+    processed_query = processText(query)
 
     for movie in movies:
-        processedMovieTitle = processText(movie["title"])
-        if isMatch(processedQuery, processedMovieTitle):
+        processed_movie_title = processText(movie["title"])
+        if isMatch(processed_query, processed_movie_title):
             foundmovies.append(movie)
-            print(f"{len(foundmovies)}. {movie["title"]}")
+            print(f"{len(foundmovies)}. {movie['title']}")
 
         if len(foundmovies) == limit:
             break
@@ -51,7 +51,7 @@ def loadMovies() -> dict:
     return json.load(file)["movies"]
 
 
-def processText(text: str) -> string:
+def processText(text: str) -> set[str]:
     lowered = text.lower()
     punctuationRemoved = removePunctuation(lowered)
     tokenizated = tokenize(punctuationRemoved)
@@ -59,7 +59,7 @@ def processText(text: str) -> string:
     return tokenizated
 
 
-def removePunctuation(text: str) -> string:
+def removePunctuation(text: str) -> str:
     trans = {}
     for punctuation in string.punctuation:
         trans[punctuation] = ""
@@ -67,13 +67,13 @@ def removePunctuation(text: str) -> string:
     return text.translate(str.maketrans(trans))
 
 
-def tokenize(text: str) -> set:
+def tokenize(text: str) -> set[str]:
     splitted = text.split(" ")
 
     return set(filter(None, splitted))
 
 
-def isMatch(query_tokens: set, target_tokens: set) -> bool:
+def isMatch(query_tokens: set[str], target_tokens: set[str]) -> bool:
     for query_token in query_tokens:
         for target_token in target_tokens:
             if query_token in target_token:
