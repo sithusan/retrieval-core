@@ -43,20 +43,28 @@ def search(query: str) -> None:
 
 
 def loadMovies() -> dict:
-    abs_path = os.path.abspath("./data/movies.json")
-    movies_path = os.path.normpath(abs_path)
+    movies_path = getPath("./data/movies.json")
 
-    file = open(movies_path, "r")
-
-    return json.load(file)["movies"]
+    with open(movies_path) as file:
+        return json.load(file)["movies"]
 
 
 def processText(text: str) -> set[str]:
     lowered = text.lower()
     punctuationRemoved = removePunctuation(lowered)
     tokenizated = tokenize(punctuationRemoved)
+    stopwords_removed = removeStopWords(tokenizated)
 
-    return tokenizated
+    return stopwords_removed
+
+
+def isMatch(query_tokens: set[str], target_tokens: set[str]) -> bool:
+    for query_token in query_tokens:
+        for target_token in target_tokens:
+            if query_token in target_token:
+                return True
+
+    return False
 
 
 def removePunctuation(text: str) -> str:
@@ -73,13 +81,24 @@ def tokenize(text: str) -> set[str]:
     return set(filter(None, splitted))
 
 
-def isMatch(query_tokens: set[str], target_tokens: set[str]) -> bool:
-    for query_token in query_tokens:
-        for target_token in target_tokens:
-            if query_token in target_token:
-                return True
+def removeStopWords(words: set[str]) -> set[str]:
+    stop_words = loadStopWords()
 
-    return False
+    return words.difference(stop_words)
+
+
+def loadStopWords() -> set[str]:
+    stop_words_path = getPath("./data/stopwords.txt")
+
+    with open(stop_words_path, "r") as file:
+        content = file.read()
+
+    return set(content.splitlines())
+
+
+def getPath(relative_path: str) -> set[str]:
+    abs_path = os.path.abspath(relative_path)
+    return os.path.normpath(abs_path)
 
 
 if __name__ == "__main__":
