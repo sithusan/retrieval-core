@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import string
 
 
 def main() -> None:
@@ -29,8 +30,10 @@ def search(query: str) -> None:
     movies = loadMovies()
     foundmovies = []
 
+    query = processText(query)
+
     for movie in movies:
-        if query.lower() in movie["title"].lower():
+        if query in processText(movie["title"]):
             foundmovies.append(movie)
             print(f"{len(foundmovies)}. {movie["title"]}")
 
@@ -45,6 +48,21 @@ def loadMovies() -> dict:
     file = open(movies_path, "r")
 
     return json.load(file)["movies"]
+
+
+def processText(text: str) -> string:
+    lowered = text.lower()
+    punctuationRemoved = removePunctuation(lowered)
+
+    return punctuationRemoved
+
+
+def removePunctuation(text: str) -> string:
+    trans = {}
+    for punctuation in string.punctuation:
+        trans[punctuation] = ""
+
+    return text.translate(str.maketrans(trans))
 
 
 if __name__ == "__main__":
