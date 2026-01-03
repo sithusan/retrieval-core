@@ -30,10 +30,11 @@ def search(query: str) -> None:
     movies = loadMovies()
     foundmovies = []
 
-    query = processText(query)
+    processedQuery = processText(query)
 
     for movie in movies:
-        if query in processText(movie["title"]):
+        processedMovieTitle = processText(movie["title"])
+        if isMatch(processedQuery, processedMovieTitle):
             foundmovies.append(movie)
             print(f"{len(foundmovies)}. {movie["title"]}")
 
@@ -53,8 +54,9 @@ def loadMovies() -> dict:
 def processText(text: str) -> string:
     lowered = text.lower()
     punctuationRemoved = removePunctuation(lowered)
+    tokenizated = tokenize(punctuationRemoved)
 
-    return punctuationRemoved
+    return tokenizated
 
 
 def removePunctuation(text: str) -> string:
@@ -63,6 +65,21 @@ def removePunctuation(text: str) -> string:
         trans[punctuation] = ""
 
     return text.translate(str.maketrans(trans))
+
+
+def tokenize(text: str) -> set:
+    splitted = text.split(" ")
+
+    return set(filter(None, splitted))
+
+
+def isMatch(query_tokens: set, target_tokens: set) -> bool:
+    for query_token in query_tokens:
+        for target_token in target_tokens:
+            if query_token in target_token:
+                return True
+
+    return False
 
 
 if __name__ == "__main__":
