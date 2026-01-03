@@ -5,6 +5,8 @@ import json
 import os
 import string
 
+_STOP_WORDS: set[str] | None = None  # for caching
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -18,7 +20,6 @@ def main() -> None:
     match args.command:
         case "search":
             search(args.query)
-            pass
         case _:
             parser.print_help()
 
@@ -42,7 +43,7 @@ def search(query: str) -> None:
             break
 
 
-def loadMovies() -> dict:
+def loadMovies() -> list[dict]:
     movies_path = getPath("./data/movies.json")
 
     with open(movies_path) as file:
@@ -51,8 +52,8 @@ def loadMovies() -> dict:
 
 def processText(text: str) -> set[str]:
     lowered = text.lower()
-    punctuationRemoved = removePunctuation(lowered)
-    tokenizated = tokenize(punctuationRemoved)
+    punctuation_removed = removePunctuation(lowered)
+    tokenizated = tokenize(punctuation_removed)
     stopwords_removed = removeStopWords(tokenizated)
 
     return stopwords_removed
@@ -82,21 +83,22 @@ def tokenize(text: str) -> set[str]:
 
 
 def removeStopWords(words: set[str]) -> set[str]:
-    stop_words = loadStopWords()
+    global _STOP_WORDS
 
-    return words.difference(stop_words)
+    if _STOP_WORDS is None:
+        _STOP_WORDS = loadStopWords()
+
+    return words.difference(_STOP_WORDS)
 
 
 def loadStopWords() -> set[str]:
     stop_words_path = getPath("./data/stopwords.txt")
 
     with open(stop_words_path, "r") as file:
-        content = file.read()
-
-    return set(content.splitlines())
+        return set(file.read().splitlines())
 
 
-def getPath(relative_path: str) -> set[str]:
+def getPath(relative_path: str) -> str:
     abs_path = os.path.abspath(relative_path)
     return os.path.normpath(abs_path)
 
