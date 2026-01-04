@@ -56,3 +56,10 @@ User query: `"running"`
 
 - A River Runs Through It: Not returned – no exact match for "running"
 - Run Baby Run: Not returned – no exact match for "running"
+
+### Inverted Index
+
+    It is the one makes the search first. It it like an database index but for document at the cost of document processing.
+
+    - A forward Index maps the location -> value. 
+    - An Inverted Index maps value -> location. 
