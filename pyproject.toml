@@ -4,4 +4,6 @@ version = "0.1.0"
 description = "Experimental information retrieval engine built to explore and evaluate classical and modern retrieval techniques for RAG systems."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "nltk==3.9.1",
+]

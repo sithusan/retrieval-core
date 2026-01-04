@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import string
+from nltk.stem import PorterStemmer
 
 _STOP_WORDS: set[str] | None = None  # for caching
 
@@ -55,8 +56,9 @@ def processText(text: str) -> set[str]:
     punctuation_removed = removePunctuation(lowered)
     tokenizated = tokenize(punctuation_removed)
     stopwords_removed = removeStopWords(tokenizated)
+    stemmed = stem(stopwords_removed)
 
-    return stopwords_removed
+    return stemmed
 
 
 def isMatch(query_tokens: set[str], target_tokens: set[str]) -> bool:
@@ -89,6 +91,17 @@ def removeStopWords(words: set[str]) -> set[str]:
         _STOP_WORDS = loadStopWords()
 
     return words.difference(_STOP_WORDS)
+
+
+def stem(words: set[str]) -> set[str]:
+    stemmer = PorterStemmer()
+
+    stemmed = set()
+
+    for word in words:
+        stemmed.add(stemmer.stem(word=word))
+
+    return stemmed
 
 
 def loadStopWords() -> set[str]:
