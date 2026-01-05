@@ -5,6 +5,7 @@ import json
 import os
 import string
 from nltk.stem import PorterStemmer
+from InvertedIndex import InvertedIndex
 
 _STOP_WORDS: set[str] | None = None  # for caching
 
@@ -16,11 +17,15 @@ def main() -> None:
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
 
+    subparsers.add_parser("build", help="Build movies to Inverted Index")
+
     args = parser.parse_args()
 
     match args.command:
         case "search":
             search(args.query)
+        case "build":
+            build()
         case _:
             parser.print_help()
 
@@ -42,6 +47,16 @@ def search(query: str) -> None:
 
         if len(foundmovies) == limit:
             break
+
+
+def build() -> None:
+    invertedIndex = InvertedIndex()
+    invertedIndex.build()
+    invertedIndex.save()
+
+    docs = invertedIndex.get_documents("merida")
+
+    print(f"First document for token 'merida' = {docs[0]}")
 
 
 def loadMovies() -> list[dict]:
