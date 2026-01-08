@@ -15,6 +15,8 @@ class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
         self.docmap: dict[int, dict] = {}
+        self.index_path = get_path("./cache/index.pkl")
+        self.docmap_path = get_path("./cache/docmap.pkl")
 
     def build(self):
         movies = load_movies()
@@ -27,19 +29,26 @@ class InvertedIndex:
         save_path = get_path("./cache")
         os.makedirs(save_path, exist_ok=True)
 
-        index_path = get_path("./cache/index.pkl")
-        docmap_path = get_path("./cache/docmap.pkl")
-
-        with open(index_path, "wb") as file:
+        with open(self.index_path, "wb") as file:
             pickle.dump(self.index, file)
 
-        with open(docmap_path, "wb") as file:
+        with open(self.docmap_path, "wb") as file:
             pickle.dump(self.docmap, file)
 
     def get_documents(self, term: str) -> list:
         documents = self.index.get(term.lower(), set())
 
         return sorted(documents)
+
+    def load(self):
+        if not os.path.isfile(self.index_path) or not os.path.isfile(self.docmap_path):
+            raise RuntimeError("No file found to load")
+
+        with open(self.index_path, "rb") as file:
+            self.index = pickle.load(file)
+
+        with open(self.docmap_path, "rb") as file:
+            self.docmap = pickle.load(file)
 
     def __add_document(self, doc_id: int, text: str):
         tokens = process_text(text)
@@ -58,29 +67,34 @@ def build_command() -> None:
     invertedIndex.build()
     invertedIndex.save()
 
-    docs = invertedIndex.get_documents("merida")
-
-    print(docs)
-
-    print(f"First document for token 'merida' = {docs[0]}")
+    invertedIndex.get_documents("merida")
 
 
-def search_command(query: str) -> None:
+def search_command(query: str) -> list:
     print(f"Searching for: {query}")
 
-    movies = load_movies()
-    found_movies = []
+    try:
+        invertedIndex = InvertedIndex()
+        invertedIndex.load()
 
-    processed_query = process_text(query)
+        found_movies = []
+        query_tokens = process_text(query)
 
-    for movie in movies:
-        processed_movie_title = process_text(movie["title"])
-        if is_match(processed_query, processed_movie_title):
-            found_movies.append(movie)
-            print(f"{len(found_movies)}. {movie['title']}")
+        for query_token in query_tokens:
+            found_ids = invertedIndex.get_documents(query_token)
+            for found_id in found_ids:
+                found_movie = invertedIndex.docmap[found_id]
+                print(
+                    f"{len(found_movies) + 1 }. ID:{found_movie['id']}, Title:{found_movie['title']}"
+                )
+                found_movies.append(found_movie)
 
-        if len(found_movies) == DEFAULT_SEARCH_LIMIT:
-            break
+                if len(found_movies) == DEFAULT_SEARCH_LIMIT:
+                    return found_movies
+
+    except RuntimeError as err:
+        print(err)
+        exit(1)
 
 
 def process_text(text: str) -> set[str]:
