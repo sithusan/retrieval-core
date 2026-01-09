@@ -8,6 +8,7 @@ from lib.search_utils import (
     load_stop_words,
     get_path,
 )
+from collections import Counter
 
 
 class InvertedIndex:
@@ -15,8 +16,10 @@ class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
         self.docmap: dict[int, dict] = {}
+        self.term_frequencies: dict[int, Counter] = {}
         self.index_path = get_path("./cache/index.pkl")
         self.docmap_path = get_path("./cache/docmap.pkl")
+        self.term_frequencies_path = get_path("./cache/term_frequencies.pkl")
 
     def build(self):
         movies = load_movies()
@@ -35,13 +38,15 @@ class InvertedIndex:
         with open(self.docmap_path, "wb") as file:
             pickle.dump(self.docmap, file)
 
-    def get_documents(self, term: str) -> list:
-        documents = self.index.get(term.lower(), set())
-
-        return sorted(documents)
+        with open(self.term_frequencies_path, "wb") as file:
+            pickle.dump(self.term_frequencies, file)
 
     def load(self):
-        if not os.path.isfile(self.index_path) or not os.path.isfile(self.docmap_path):
+        if (
+            not os.path.isfile(self.index_path)
+            or not os.path.isfile(self.docmap_path)
+            or not os.path.isfile(self.term_frequencies_path)
+        ):
             raise RuntimeError("No file found to load")
 
         with open(self.index_path, "rb") as file:
@@ -50,6 +55,24 @@ class InvertedIndex:
         with open(self.docmap_path, "rb") as file:
             self.docmap = pickle.load(file)
 
+        with open(self.term_frequencies_path, "rb") as file:
+            self.term_frequencies = pickle.load(file)
+
+    def get_documents(self, term: str) -> list:
+        documents = self.index.get(term.lower(), set())
+
+        return sorted(documents)
+
+    def get_tf(self, doc_id: int, term: str) -> int:
+        tokens = process_text(term)
+
+        if len(tokens) != 1:
+            raise ValueError("Term MUST be exactly one")
+
+        term_frequenices = self.term_frequencies.get(doc_id, Counter())
+
+        return term_frequenices.get(tokens[0], 0)
+
     def __add_document(self, doc_id: int, text: str):
         tokens = process_text(text)
 
@@ -57,6 +80,12 @@ class InvertedIndex:
             if not token in self.index:
                 self.index[token] = set()
             self.index[token].add(doc_id)
+
+        if not doc_id in self.term_frequencies:
+            self.term_frequencies[doc_id] = Counter(tokens)
+        else:
+            # Counter's update does not return anything and update in-place.
+            self.term_frequencies[doc_id].update(tokens)
 
 
 _STOP_WORDS: set[str] | None = None  # for caching
@@ -78,11 +107,17 @@ def search_command(query: str) -> list:
         invertedIndex.load()
 
         found_movies = []
+        seen = set()
+
         query_tokens = process_text(query)
 
         for query_token in query_tokens:
             found_ids = invertedIndex.get_documents(query_token)
             for found_id in found_ids:
+                if found_id in seen:
+                    continue
+                seen.add(found_id)
+
                 found_movie = invertedIndex.docmap[found_id]
                 print(
                     f"{len(found_movies) + 1 }. ID:{found_movie['id']}, Title:{found_movie['title']}"
@@ -97,7 +132,15 @@ def search_command(query: str) -> list:
         exit(1)
 
 
-def process_text(text: str) -> set[str]:
+def tf_command(doc_id: int, term: str) -> None:
+    invertedIndex = InvertedIndex()
+    invertedIndex.load()
+    tf = invertedIndex.get_tf(doc_id, term)
+
+    print(f"Term {term}'s frequency is {tf}")
+
+
+def process_text(text: str) -> list[str]:
     lowered = text.lower()
     punctuation_removed = remove_punctuation(lowered)
     tokenizated = tokenize(punctuation_removed)
@@ -115,28 +158,34 @@ def remove_punctuation(text: str) -> str:
     return text.translate(str.maketrans(trans))
 
 
-def tokenize(text: str) -> set[str]:
+def tokenize(text: str) -> list[str]:
     splitted = text.split(" ")
 
-    return set(filter(None, splitted))
+    return list(filter(None, splitted))
 
 
-def remove_stopwords(words: set[str]) -> set[str]:
+def remove_stopwords(words: list[str]) -> list[str]:
     global _STOP_WORDS
 
     if _STOP_WORDS is None:
         _STOP_WORDS = load_stop_words()
 
-    return words.difference(_STOP_WORDS)
-
-
-def stem(words: set[str]) -> set[str]:
-    stemmer = PorterStemmer()
-
-    stemmed = set()
+    filtered_words = []
 
     for word in words:
-        stemmed.add(stemmer.stem(word=word))
+        if word not in _STOP_WORDS:
+            filtered_words.append(word)
+
+    return filtered_words
+
+
+def stem(words: list[str]) -> list[str]:
+    stemmer = PorterStemmer()
+
+    stemmed = []
+
+    for word in words:
+        stemmed.append(stemmer.stem(word=word))
 
     return stemmed
 
