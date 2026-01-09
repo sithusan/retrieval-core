@@ -69,9 +69,9 @@ class InvertedIndex:
         if len(tokens) != 1:
             raise ValueError("Term MUST be exactly one")
 
-        term_frequenices = self.term_frequencies.get(doc_id, Counter())
+        term_frequencies = self.term_frequencies.get(doc_id, Counter())
 
-        return term_frequenices.get(tokens[0], 0)
+        return term_frequencies.get(tokens[0], 0)
 
     def __add_document(self, doc_id: int, text: str):
         tokens = process_text(text)
@@ -133,11 +133,15 @@ def search_command(query: str) -> list:
 
 
 def tf_command(doc_id: int, term: str) -> None:
-    invertedIndex = InvertedIndex()
-    invertedIndex.load()
-    tf = invertedIndex.get_tf(doc_id, term)
+    try:
+        invertedIndex = InvertedIndex()
+        invertedIndex.load()
+        tf = invertedIndex.get_tf(doc_id, term)
 
-    print(f"Term {term}'s frequency is {tf}")
+        print(f"Term {term}'s frequency is {tf}")
+    except Exception as err:
+        print(err)
+        exit(1)
 
 
 def process_text(text: str) -> list[str]:
