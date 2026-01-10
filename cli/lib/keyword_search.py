@@ -9,6 +9,7 @@ from lib.search_utils import (
     get_path,
 )
 from collections import Counter
+import math
 
 
 class InvertedIndex:
@@ -58,20 +59,26 @@ class InvertedIndex:
         with open(self.term_frequencies_path, "rb") as file:
             self.term_frequencies = pickle.load(file)
 
-    def get_documents(self, term: str) -> list:
-        documents = self.index.get(term.lower(), set())
-
+    def get_documents(self, term: str) -> set[int]:
+        token = process_term(term)
+        documents = self.index.get(token, set())
         return sorted(documents)
 
     def get_tf(self, doc_id: int, term: str) -> int:
-        tokens = process_text(term)
-
-        if len(tokens) != 1:
-            raise ValueError("Term MUST be exactly one")
-
+        token = process_term(term)
         term_frequencies = self.term_frequencies.get(doc_id, Counter())
 
-        return term_frequencies.get(tokens[0], 0)
+        return term_frequencies.get(token, 0)
+
+    def get_idf(self, term: str) -> float:
+        token = process_term(term)
+
+        document_ids = self.get_documents(token)
+
+        total_document_count = len(self.docmap)
+        match_document_count = len(document_ids)
+
+        return math.log((total_document_count + 1) / (match_document_count + 1))
 
     def __add_document(self, doc_id: int, text: str):
         tokens = process_text(text)
@@ -95,8 +102,6 @@ def build_command() -> None:
     invertedIndex = InvertedIndex()
     invertedIndex.build()
     invertedIndex.save()
-
-    invertedIndex.get_documents("merida")
 
 
 def search_command(query: str) -> list:
@@ -130,6 +135,17 @@ def search_command(query: str) -> list:
     except RuntimeError as err:
         print(err)
         exit(1)
+
+
+def idf_command(term: str) -> None:
+    try:
+        invertedIndex = InvertedIndex()
+        invertedIndex.load()
+        idf = invertedIndex.get_idf(term)
+
+        print(f"Inverse document frequency of '{term}': {idf:.2f}")
+    except Exception as e:
+        print(e)
 
 
 def tf_command(doc_id: int, term: str) -> None:
@@ -200,3 +216,12 @@ def is_match(query_tokens: set[str], target_tokens: set[str]) -> bool:
             if query_token in target_token:
                 return True
     return False
+
+
+def process_term(term: str) -> str:
+    tokens = process_text(term)
+
+    if len(tokens) != 1:
+        raise ValueError("Term MUST be exactly one")
+
+    return tokens[0]
