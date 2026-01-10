@@ -83,7 +83,7 @@ class InvertedIndex:
     def __add_document(self, doc_id: int, text: str):
         tokens = process_text(text)
 
-        for token in tokens:
+        for token in set(tokens):
             if not token in self.index:
                 self.index[token] = set()
             self.index[token].add(doc_id)
@@ -99,9 +99,13 @@ _STOP_WORDS: set[str] | None = None  # for caching
 
 
 def build_command() -> None:
+    print("Started building...")
+
     invertedIndex = InvertedIndex()
     invertedIndex.build()
     invertedIndex.save()
+
+    print("Successfully built...")
 
 
 def search_command(query: str) -> list:
@@ -179,7 +183,7 @@ def remove_punctuation(text: str) -> str:
 
 
 def tokenize(text: str) -> list[str]:
-    splitted = text.split(" ")
+    splitted = text.split()
 
     return list(filter(None, splitted))
 
