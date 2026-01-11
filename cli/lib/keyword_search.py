@@ -141,6 +141,18 @@ def search_command(query: str) -> list:
         exit(1)
 
 
+def tf_command(doc_id: int, term: str) -> None:
+    try:
+        invertedIndex = InvertedIndex()
+        invertedIndex.load()
+        tf = invertedIndex.get_tf(doc_id, term)
+
+        print(f"Term {term}'s frequency is {tf}")
+    except Exception as err:
+        print(err)
+        exit(1)
+
+
 def idf_command(term: str) -> None:
     try:
         invertedIndex = InvertedIndex()
@@ -152,16 +164,19 @@ def idf_command(term: str) -> None:
         print(e)
 
 
-def tf_command(doc_id: int, term: str) -> None:
+def tf_idf_command(doc_id, term: str) -> None:
     try:
+
         invertedIndex = InvertedIndex()
         invertedIndex.load()
         tf = invertedIndex.get_tf(doc_id, term)
+        idf = invertedIndex.get_idf(term)
 
-        print(f"Term {term}'s frequency is {tf}")
-    except Exception as err:
-        print(err)
-        exit(1)
+        tf_idf = tf * idf
+
+        print(f"TF-IDF score of '{term}' in document '{doc_id}': {tf_idf:.2f}")
+    except Exception as e:
+        print(e)
 
 
 def process_text(text: str) -> list[str]:
