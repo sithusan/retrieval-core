@@ -61,5 +61,5 @@ User query: `"running"`
 
     It is the one makes the search first. It it like an database index but for document at the cost of document processing.
 
-    - A forward Index maps the location -> value. 
-    - An Inverted Index maps value -> location. 
+    - A forward Index maps the location -> value.
+    - An Inverted Index maps value -> location.
