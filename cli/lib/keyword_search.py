@@ -10,6 +10,7 @@ from lib.search_utils import (
 )
 from collections import Counter
 import math
+from lib.constants import BM25_K1
 
 
 class InvertedIndex:
@@ -83,6 +84,11 @@ class InvertedIndex:
             / (match_document_count + 0.5)
             + 1
         )
+
+    def get_bm25tf(self, doc_id: int, term: str, k1: float = BM25_K1):
+        tf = self.get_tf(doc_id, term)
+
+        return (tf * (k1 + 1)) / (tf + k1)
 
     def get_idf(self, term: str) -> float:
         token = process_term(term)
@@ -197,9 +203,21 @@ def bm25idf_command(term: str) -> None:
     try:
         invertedIndex = InvertedIndex()
         invertedIndex.load()
-        bm25_itf = invertedIndex.get_bm25idf(term)
+        bm25idf = invertedIndex.get_bm25idf(term)
 
-        print(f"BM25 IDF score of '{term}': {bm25_itf:.2f}")
+        print(f"BM25 IDF score of '{term}': {bm25idf:.2f}")
+    except Exception as e:
+        print(e)
+
+
+# prevent the term saturation
+def bm25tf_command(doc_id: int, term: str) -> None:
+    try:
+        invertedIndex = InvertedIndex()
+        invertedIndex.load()
+        bm25tf = invertedIndex.get_bm25tf(doc_id, term)
+
+        print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
     except Exception as e:
         print(e)
 
