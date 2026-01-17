@@ -69,9 +69,10 @@ class InvertedIndex:
         with open(self.doc_lengths_path, "rb") as file:
             self.doc_lengths = pickle.load(file)
 
-    def get_documents(self, term: str) -> set[int]:
+    def get_documents(self, term: str) -> list[int]:
         token = process_term(term)
         documents = self.index.get(token, set())
+
         return sorted(documents)
 
     def get_tf(self, doc_id: int, term: str) -> int:
@@ -80,10 +81,27 @@ class InvertedIndex:
 
         return term_frequencies.get(token, 0)
 
-    def get_bm25idf(self, term: str) -> float:
-        token = process_term(term)
+    def get_idf(self, term: str) -> float:
+        document_ids = self.get_documents(term)
 
-        document_ids = self.get_documents(token)
+        total_document_count = len(self.docmap)
+        match_document_count = len(document_ids)
+
+        return math.log((total_document_count + 1) / (match_document_count + 1))
+
+    def get_bm25tf(
+        self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
+    ):
+        tf = self.get_tf(doc_id, term)
+        doc_length = self.doc_lengths.get(doc_id, 0)
+
+        # May cause division by zero, if get_avg_doc_length and it's clearly say that, we haven't build our index.
+        length_normalization = 1 - b + b * (doc_length / self.__get_avg_doc_length())
+
+        return (tf * (k1 + 1)) / (tf + k1 * length_normalization)
+
+    def get_bm25idf(self, term: str) -> float:
+        document_ids = self.get_documents(term)
 
         total_document_count = len(self.docmap)
         match_document_count = len(document_ids)
@@ -94,25 +112,41 @@ class InvertedIndex:
             + 1
         )
 
-    def get_bm25tf(
-        self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
-    ):
-        tf = self.get_tf(doc_id, term)
-        doc_length = self.doc_lengths.get(doc_id, 0)
+    def get_bm25(self, doc_id: int, term: str) -> float:
+        return self.get_bm25tf(doc_id, term) * self.get_bm25idf(term)
 
-        length_normalization = 1 - b + b * (doc_length / self.__get_avg_doc_length())
+    def bm25_search(self, query: str, limit: int) -> list[str]:
+        query_tokens = process_text(query)
 
-        return (tf * (k1 + 1)) / (tf + k1 * length_normalization)
+        scores: dict[int, float] = {}
 
-    def get_idf(self, term: str) -> float:
-        token = process_term(term)
+        for query_token in query_tokens:
+            found_ids = self.get_documents(query_token)
 
-        document_ids = self.get_documents(token)
+            for found_id in found_ids:
+                # aggregate the scores for the each document.
+                # Case - match same document with different term
+                scores[found_id] = scores.get(found_id, 0.0) + self.get_bm25(
+                    found_id, query_token
+                )
 
-        total_document_count = len(self.docmap)
-        match_document_count = len(document_ids)
+        sortedScores = dict(
+            sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        )
 
-        return math.log((total_document_count + 1) / (match_document_count + 1))
+        result = []
+
+        for key in sortedScores:
+            movie = self.docmap[key]
+            score = sortedScores[key]
+            movie_with_score = f"({movie['id']}) {movie['title']} - Score: {score:.2f}"
+
+            result.append(movie_with_score)
+
+            if len(result) == limit:
+                return result
+
+        return result
 
     def __add_document(self, doc_id: int, text: str):
         tokens = process_text(text)
@@ -185,6 +219,21 @@ def search_command(query: str) -> list:
                     return found_movies
 
     except RuntimeError as err:
+        print(err)
+        exit(1)
+
+
+def bm25_search_command(query: str, limit: int) -> None:
+    try:
+        invertedIndex = InvertedIndex()
+        invertedIndex.load()
+
+        result = invertedIndex.bm25_search(query, limit)
+
+        for key, value in enumerate(result):
+            print(f"{key+1}. {value}")
+
+    except Exception as err:
         print(err)
         exit(1)
 

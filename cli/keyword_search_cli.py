@@ -4,22 +4,31 @@ import argparse
 from lib.keyword_search import (
     build_command,
     search_command,
+    bm25_search_command,
     tf_command,
     idf_command,
     tf_idf_command,
     bm25idf_command,
     bm25tf_command,
 )
-from lib.constants import BM25_K1, BM25_B
+from lib.constants import SEARCH_LIMIT, BM25_K1, BM25_B
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    search_parser = subparsers.add_parser("search", help="Search movies using BM25")
+    # TODO:: add limit
+    search_parser = subparsers.add_parser("search", help="Search movies")
     search_parser.add_argument("query", type=str, help="Search query")
 
+    bm25search_parser = subparsers.add_parser(
+        "bm25search", help="Search movies using full BM25 scoring"
+    )
+    bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument(
+        "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
+    )
     subparsers.add_parser("build", help="Build movies to Inverted Index")
 
     tf_parser = subparsers.add_parser("tf", help="Get Term Frequency of given term")
@@ -41,6 +50,7 @@ def main() -> None:
     bm25_idf_parser.add_argument(
         "term", type=str, help="Term to get BM25 IDF score for"
     )
+
     bm25_tf_parser = subparsers.add_parser(
         "bm25tf", help="Get BM25 TF score for a given document ID and term"
     )
@@ -60,6 +70,8 @@ def main() -> None:
             build_command()
         case "search":
             search_command(args.query)
+        case "bm25search":
+            bm25_search_command(args.query, args.limit)
         case "tf":
             tf_command(args.doc_id, args.term)
         case "idf":
@@ -70,6 +82,7 @@ def main() -> None:
             bm25idf_command(args.term)
         case "bm25tf":
             bm25tf_command(args.doc_id, args.term, args.k1, args.b)
+
         case _:
             parser.print_help()
 
