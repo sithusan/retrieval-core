@@ -10,7 +10,7 @@ from lib.search_utils import (
 )
 from collections import Counter
 import math
-from lib.constants import BM25_K1, BM25_B
+from lib.constants import LAPLACE_SMOOTHING, BM25_K1, BM25_B
 
 
 class InvertedIndex:
@@ -89,8 +89,8 @@ class InvertedIndex:
         match_document_count = len(document_ids)
 
         return math.log(
-            (total_document_count - match_document_count + 0.5)
-            / (match_document_count + 0.5)
+            (total_document_count - match_document_count + LAPLACE_SMOOTHING)
+            / (match_document_count + LAPLACE_SMOOTHING)
             + 1
         )
 
