@@ -10,7 +10,7 @@ from lib.search_utils import (
 )
 from collections import Counter
 import math
-from lib.constants import BM25_K1
+from lib.constants import BM25_K1, BM25_B
 
 
 class InvertedIndex:
@@ -19,9 +19,11 @@ class InvertedIndex:
         self.index: dict[str, set[int]] = {}
         self.docmap: dict[int, dict] = {}
         self.term_frequencies: dict[int, Counter] = {}
+        self.doc_lengths: dict[int, int] = {}
         self.index_path = get_path("./cache/index.pkl")
         self.docmap_path = get_path("./cache/docmap.pkl")
         self.term_frequencies_path = get_path("./cache/term_frequencies.pkl")
+        self.doc_lengths_path = get_path("./cache/document_length.pkl")
 
     def build(self):
         movies = load_movies()
@@ -43,11 +45,15 @@ class InvertedIndex:
         with open(self.term_frequencies_path, "wb") as file:
             pickle.dump(self.term_frequencies, file)
 
+        with open(self.doc_lengths_path, "wb") as file:
+            pickle.dump(self.doc_lengths, file)
+
     def load(self):
         if (
             not os.path.isfile(self.index_path)
             or not os.path.isfile(self.docmap_path)
             or not os.path.isfile(self.term_frequencies_path)
+            or not os.path.isfile(self.doc_lengths_path)
         ):
             raise RuntimeError("No file found to load")
 
@@ -59,6 +65,9 @@ class InvertedIndex:
 
         with open(self.term_frequencies_path, "rb") as file:
             self.term_frequencies = pickle.load(file)
+
+        with open(self.doc_lengths_path, "rb") as file:
+            self.doc_lengths = pickle.load(file)
 
     def get_documents(self, term: str) -> set[int]:
         token = process_term(term)
@@ -85,10 +94,15 @@ class InvertedIndex:
             + 1
         )
 
-    def get_bm25tf(self, doc_id: int, term: str, k1: float = BM25_K1):
+    def get_bm25tf(
+        self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
+    ):
         tf = self.get_tf(doc_id, term)
+        doc_length = self.doc_lengths.get(doc_id, 0)
 
-        return (tf * (k1 + 1)) / (tf + k1)
+        length_normalization = 1 - b + b * (doc_length / self.__get_avg_doc_length())
+
+        return (tf * (k1 + 1)) / (tf + k1 * length_normalization)
 
     def get_idf(self, term: str) -> float:
         token = process_term(term)
@@ -113,6 +127,20 @@ class InvertedIndex:
         else:
             # Counter's update does not return anything and update in-place.
             self.term_frequencies[doc_id].update(tokens)
+
+        self.doc_lengths[doc_id] = len(tokens)
+
+    def __get_avg_doc_length(self) -> float:
+        if len(self.docmap) == 0:
+            return 0.0
+
+        total_doc_length = 0
+        total_docs = len(self.doc_lengths)
+
+        for key in self.doc_lengths:
+            total_doc_length += self.doc_lengths[key]
+
+        return total_doc_length / total_docs
 
 
 _STOP_WORDS: set[str] | None = None  # for caching
@@ -211,11 +239,11 @@ def bm25idf_command(term: str) -> None:
 
 
 # prevent the term saturation
-def bm25tf_command(doc_id: int, term: str) -> None:
+def bm25tf_command(doc_id: int, term: str, k1: float, b: float) -> None:
     try:
         invertedIndex = InvertedIndex()
         invertedIndex.load()
-        bm25tf = invertedIndex.get_bm25tf(doc_id, term)
+        bm25tf = invertedIndex.get_bm25tf(doc_id, term, k1, b)
 
         print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
     except Exception as e:
