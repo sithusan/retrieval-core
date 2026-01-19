@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 
 import argparse
+from lib.sematic_search import verifyModel
 
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    subparsers.add_parser("verify", help="Verify the model to use the sematic search")
+
     args = parser.parse_args()
 
     match args.command:
+        case "verify":
+            verifyModel()
         case _:
             parser.print_help()
 
