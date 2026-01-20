@@ -59,7 +59,29 @@ User query: `"running"`
 
 ### Inverted Index
 
-    It is the one makes the search first. It it like an database index but for document at the cost of document processing.
+    It enables fast search by mapping terms to their document locations. Unlike a forward index (location → value), an inverted index maps values (terms) → locations (documents).
 
-    - A forward Index maps the location -> value.
-    - An Inverted Index maps value -> location.
+    - **Forward Index:** Maps document location → term value
+    - **Inverted Index:** Maps term value → document locations
+
+### Term Frequency (TF)
+
+    TF measures how frequently a term appears within a single document.
+    - Local metric (document-level): captures term frequency in a specific document
+    - Example: "run" appears 5 times in Document A, 2 times in Document B
+
+### Inverse Document Frequency (IDF)
+
+    IDF measures how rare or common a term is across the entire dataset, distinguishing important domain-specific terms from generic stop words.
+    - Global metric (corpus-level): captures term rarity across all documents
+    - Calculation: The more documents a term appears in, the lower its IDF score (less rare = less important)
+    - Purpose: We invert this because we want rare, distinctive terms to have high scores
+
+### TF-IDF Score
+
+    TF-IDF combines both metrics to rank document relevance: **TF-IDF = TF × IDF**
+
+**Why TF-IDF?**
+ - Terms that appear frequently in a single document get high scores (high TF)
+ - Terms that are rare across the dataset get high scores (high IDF)
+ - Best matches have both high TF and high IDF: common in this document, but uncommon overall
