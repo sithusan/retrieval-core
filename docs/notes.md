@@ -49,8 +49,7 @@ User Query: `"the bear"`
 - "The Terminator": matches "the" ✗ (meaningless "the" matches, so misleading result)
 
 ### Stemming
-
-    It is for help matching differentation of the keywords by reducing by it's root form.
+   It is for help matching differentation of the keywords by reducing by it's root form.
 
 **Example:**
 User query: `"running"`
