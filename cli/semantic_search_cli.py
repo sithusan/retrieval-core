@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from lib.sematic_search import verifyModel
+from lib.sematic_search import verify_model, embed_text
 
 
 def main():
@@ -10,11 +10,16 @@ def main():
 
     subparsers.add_parser("verify", help="Verify the model to use the sematic search")
 
+    embed_text_parser = subparsers.add_parser("embed_text", help="Embed the text")
+    embed_text_parser.add_argument("text", type=str, help="Text to be embedded")
+
     args = parser.parse_args()
 
     match args.command:
         case "verify":
-            verifyModel()
+            verify_model()
+        case "embed_text":
+            embed_text(args.text)
         case _:
             parser.print_help()
 
