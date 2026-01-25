@@ -1,5 +1,6 @@
 from sentence_transformers import SentenceTransformer
 from lib.search_utils import get_path, ensure_dirs_exist, load_movies
+from numpy.typing import NDArray
 import numpy as np
 import os
 
@@ -8,24 +9,22 @@ class SemanticSearch:
 
     def __init__(self):
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        # TODO:: add type
-        self.embeddings = None
+        self.embeddings: NDArray[np.floating] = None
         self.documents: list[dict] = None
-        self.documentMap: dict[int, dict] = {}
+        self.document_map: dict[int, dict] = {}
         self.movie_embedding_path = get_path("./cache/movie_embeddings.npy")
 
-    def generate_embedding(self, text: str) -> list:
+    def generate_embedding(self, text: str) -> NDArray[np.floating]:
         if len(text.strip()) == 0:
             raise ValueError("The provided text is empty")
 
         return self.model.encode([text])[0]
 
-    # TODO:: add return type
-    def load_or_create_embeddings(self, documents: list[dict]):
+    def load_or_create_embeddings(self, documents: list[dict]) -> NDArray[np.floating]:
         self.documents = documents
 
         for document in documents:
-            self.documentMap[document["id"]] = document
+            self.document_map[document["id"]] = document
 
         if os.path.exists(self.movie_embedding_path):
             with open(self.movie_embedding_path, "rb") as file:
@@ -36,13 +35,12 @@ class SemanticSearch:
 
         return self.build_embeddings(documents)
 
-    # TODO:: add return type
-    def build_embeddings(self, documents: list[dict]):
+    def build_embeddings(self, documents: list[dict]) -> NDArray[np.floating]:
         self.documents = documents
 
         movies = []
         for document in documents:
-            self.documentMap[document["id"]] = document
+            self.document_map[document["id"]] = document
             movies.append(f"{document['title']}: {document['description']}")
 
         self.embeddings = self.model.encode(movies, show_progress_bar=True)
