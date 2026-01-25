@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-class SematicSearch:
+class SemanticSearch:
 
     def __init__(self):
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -56,14 +56,14 @@ class SematicSearch:
 
 
 def verify_model() -> None:
-    sematicSearch = SematicSearch()
-    print(f"Model loaded: {sematicSearch.model}")
-    print(f"Max sequence length: {sematicSearch.model.max_seq_length}")
+    semanticSearch = SemanticSearch()
+    print(f"Model loaded: {semanticSearch.model}")
+    print(f"Max sequence length: {semanticSearch.model.max_seq_length}")
 
 
 def embed_text(text: str):
-    sematicSearch = SematicSearch()
-    embedding = sematicSearch.generate_embedding(text)
+    semanticSearch = SemanticSearch()
+    embedding = semanticSearch.generate_embedding(text)
 
     print(f"Text: {text}")
     print(f"First 3 dimensions: {embedding[:3]}")
@@ -73,8 +73,8 @@ def embed_text(text: str):
 def verify_embeddings() -> None:
     movies = load_movies()
 
-    sematicSearch = SematicSearch()
-    embeddings = sematicSearch.load_or_create_embeddings(movies)
+    semanticSearch = SemanticSearch()
+    embeddings = semanticSearch.load_or_create_embeddings(movies)
 
     print(f"Number of docs:   {len(movies)}")
     print(
