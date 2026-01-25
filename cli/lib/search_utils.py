@@ -18,6 +18,11 @@ def load_stop_words() -> set[str]:
         return set(file.read().splitlines())
 
 
+def ensure_dirs_exist(path: str = "./cache"):
+    save_path = get_path(path)
+    os.makedirs(save_path, exist_ok=True)
+
+
 def get_path(relative_path: str) -> str:
     abs_path = os.path.abspath(relative_path)
 

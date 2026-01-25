@@ -6,6 +6,7 @@ from lib.search_utils import (
     DEFAULT_SEARCH_LIMIT,
     load_movies,
     load_stop_words,
+    ensure_dirs_exist,
     get_path,
 )
 from collections import Counter
@@ -33,8 +34,7 @@ class InvertedIndex:
             self.__add_document(movie["id"], f"{movie['title']} {movie['description']}")
 
     def save(self):
-        save_path = get_path("./cache")
-        os.makedirs(save_path, exist_ok=True)
+        ensure_dirs_exist()
 
         with open(self.index_path, "wb") as file:
             pickle.dump(self.index, file)
