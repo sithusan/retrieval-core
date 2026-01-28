@@ -6,7 +6,9 @@ from lib.semantic_search import (
     embed_text,
     verify_embeddings,
     embed_query_text,
+    search,
 )
+from lib.constants import SEARCH_LIMIT
 
 
 def main():
@@ -26,6 +28,11 @@ def main():
     )
     embed_query_text_parser.add_argument("query", type=str, help="Query to be embedded")
 
+    search_parser = subparsers.add_parser("search", help="Search Query")
+    search_parser.add_argument("query", type=str, help="Query for search")
+    search_parser.add_argument(
+        "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
+    )
     args = parser.parse_args()
 
     match args.command:
@@ -37,6 +44,8 @@ def main():
             embed_text(args.text)
         case "embedquery":
             embed_query_text(args.query)
+        case "search":
+            search(args.query, args.limit)
         case _:
             parser.print_help()
 

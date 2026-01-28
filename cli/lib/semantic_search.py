@@ -3,6 +3,7 @@ from lib.search_utils import get_path, ensure_dirs_exist, load_movies
 from numpy.typing import NDArray
 import numpy as np
 import os
+from lib.constants import SEARCH_LIMIT
 
 
 class SemanticSearch:
@@ -13,6 +14,30 @@ class SemanticSearch:
         self.documents: list[dict] = None
         self.document_map: dict[int, dict] = {}
         self.movie_embedding_path = get_path("./cache/movie_embeddings.npy")
+
+    def search(self, query: str, limit: int = SEARCH_LIMIT):
+        if len(self.embeddings) == 0:
+            raise ValueError(
+                "No embeddings loaded. Call `load_or_create_embeddings` first."
+            )
+
+        query_embedding = self.generate_embedding(query)
+
+        similarities = []
+
+        for i, embedding in enumerate(
+            self.embeddings
+        ):  # model's encode guaranteed that, input list order is preserved, output embeddings are in the same order.
+            document = self.documents[i]
+            score = cosine_similarity(query_embedding, embedding)
+
+            similarities.append((score, document))
+
+        sorted_similarities = sorted(
+            similarities, key=lambda item: item[0], reverse=True
+        )
+
+        return sorted_similarities[:limit]
 
     def generate_embedding(self, text: str) -> NDArray[np.floating]:
         if len(text.strip()) == 0:
@@ -53,6 +78,17 @@ class SemanticSearch:
         return self.embeddings
 
 
+def cosine_similarity(vec1, vec2) -> float:
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)  # magnitude
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
+
+
 def verify_model() -> None:
     semanticSearch = SemanticSearch()
     print(f"Model loaded: {semanticSearch.model}")
@@ -87,3 +123,19 @@ def verify_embeddings() -> None:
     print(
         f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions"
     )
+
+
+def search(query: str, limit: int) -> None:
+    try:
+        movies = load_movies()
+
+        semanticSearch = SemanticSearch()
+        semanticSearch.load_or_create_embeddings(movies)
+        result = semanticSearch.search(query, limit)
+
+        for i, [score, document] in enumerate(result):
+            print(f"{i+1}. {document['title']} (score: {score})")
+            print(f"{document["description"]} \n")
+    except Exception as err:
+        print(err)
+        exit(1)
