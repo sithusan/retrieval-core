@@ -3,7 +3,6 @@ import pickle
 import string
 from nltk.stem import PorterStemmer
 from lib.search_utils import (
-    DEFAULT_SEARCH_LIMIT,
     load_movies,
     load_stop_words,
     ensure_dirs_exist,
@@ -190,7 +189,7 @@ def build_command() -> None:
     print("Successfully built...")
 
 
-def search_command(query: str) -> list:
+def search_command(query: str, limit: int) -> list:
     print(f"Searching for: {query}")
 
     try:
@@ -215,7 +214,7 @@ def search_command(query: str) -> list:
                 )
                 found_movies.append(found_movie)
 
-                if len(found_movies) == DEFAULT_SEARCH_LIMIT:
+                if len(found_movies) == limit:
                     return found_movies
 
     except RuntimeError as err:

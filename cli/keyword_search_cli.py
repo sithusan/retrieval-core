@@ -18,9 +18,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # TODO:: add limit
     search_parser = subparsers.add_parser("search", help="Search movies")
     search_parser.add_argument("query", type=str, help="Search query")
+    search_parser.add_argument(
+        "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
+    )
 
     bm25search_parser = subparsers.add_parser(
         "bm25search", help="Search movies using full BM25 scoring"
@@ -69,7 +71,7 @@ def main() -> None:
         case "build":
             build_command()
         case "search":
-            search_command(args.query)
+            search_command(args.query, args.limit)
         case "bm25search":
             bm25_search_command(args.query, args.limit)
         case "tf":

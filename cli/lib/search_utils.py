@@ -1,8 +1,6 @@
 import os
 import json
 
-DEFAULT_SEARCH_LIMIT = 5
-
 
 def load_movies() -> list[dict]:
     movies_path = get_path("./data/movies.json")
