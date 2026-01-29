@@ -7,8 +7,9 @@ from lib.semantic_search import (
     verify_embeddings,
     embed_query_text,
     search,
+    chunk,
 )
-from lib.constants import SEARCH_LIMIT
+from lib.constants import SEARCH_LIMIT, CHUNK_SIZE
 
 
 def main():
@@ -33,6 +34,12 @@ def main():
     search_parser.add_argument(
         "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
     )
+
+    chunk_parser = subparsers.add_parser("chunk", help="Chunk the text")
+    chunk_parser.add_argument("text", type=str, help="Text to chunk")
+    chunk_parser.add_argument(
+        "--chunk_size", type=int, default=CHUNK_SIZE, help="Size of the chunk"
+    )
     args = parser.parse_args()
 
     match args.command:
@@ -46,6 +53,8 @@ def main():
             embed_query_text(args.query)
         case "search":
             search(args.query, args.limit)
+        case "chunk":
+            chunk(args.text, args.chunk_size)
         case _:
             parser.print_help()
 

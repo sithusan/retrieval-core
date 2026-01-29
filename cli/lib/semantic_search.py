@@ -139,3 +139,7 @@ def search(query: str, limit: int) -> None:
     except Exception as err:
         print(err)
         exit(1)
+
+
+def chunk(text: str, chunk_size: int) -> None:
+    print(f"Chunking {chunk_size} characters")
