@@ -142,4 +142,19 @@ def search(query: str, limit: int) -> None:
 
 
 def chunk(text: str, chunk_size: int) -> None:
-    print(f"Chunking {chunk_size} characters")
+    words = text.split(" ")
+
+    result = []
+    remaining = len(words)
+    current = 0
+
+    while remaining > chunk_size:
+        result.append(" ".join(words[current : current + chunk_size]))
+        current += chunk_size
+        remaining -= chunk_size
+
+    result.append(" ".join(words[current:]))
+
+    print(f"Chunking {len(text)} characters")
+    for i, value in enumerate(result, 1):
+        print(f"{i}. {value}")

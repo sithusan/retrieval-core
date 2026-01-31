@@ -38,7 +38,7 @@ def main():
     chunk_parser = subparsers.add_parser("chunk", help="Chunk the text")
     chunk_parser.add_argument("text", type=str, help="Text to chunk")
     chunk_parser.add_argument(
-        "--chunk_size", type=int, default=CHUNK_SIZE, help="Size of the chunk"
+        "--chunk-size", type=int, default=CHUNK_SIZE, help="Size of the chunk"
     )
     args = parser.parse_args()
 
