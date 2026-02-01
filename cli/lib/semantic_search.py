@@ -3,7 +3,7 @@ from lib.search_utils import get_path, ensure_dirs_exist, load_movies
 from numpy.typing import NDArray
 import numpy as np
 import os
-from lib.constants import SEARCH_LIMIT
+from lib.constants import SEARCH_LIMIT, CHUNK_SIZE, OVERLAP
 
 
 class SemanticSearch:
@@ -149,7 +149,9 @@ def chunk(text: str, chunk_size: int, overlap: int) -> None:
         print(f"{i}. {value}")
 
 
-def fixed_size_chunking(text: str, chunk_size: int, overlap: int) -> list[str]:
+def fixed_size_chunking(
+    text: str, chunk_size: int = CHUNK_SIZE, overlap: int = OVERLAP
+) -> list[str]:
     words = text.split(" ")
 
     result = []
