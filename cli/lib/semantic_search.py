@@ -141,15 +141,15 @@ def search(query: str, limit: int) -> None:
         exit(1)
 
 
-def chunk(text: str, chunk_size: int) -> None:
-    chunked = fixed_size_chunking(text, chunk_size)
+def chunk(text: str, chunk_size: int, overlap: int) -> None:
+    chunked = fixed_size_chunking(text, chunk_size, overlap)
 
     print(f"Chunking {len(text)} characters")
     for i, value in enumerate(chunked, 1):
         print(f"{i}. {value}")
 
 
-def fixed_size_chunking(text: str, chunk_size: int) -> list[str]:
+def fixed_size_chunking(text: str, chunk_size: int, overlap: int) -> list[str]:
     words = text.split(" ")
 
     result = []
@@ -158,8 +158,13 @@ def fixed_size_chunking(text: str, chunk_size: int) -> list[str]:
 
     while remaining > chunk_size:
         result.append(" ".join(words[current : current + chunk_size]))
-        current += chunk_size
-        remaining -= chunk_size
+
+        if overlap > 0:
+            current += chunk_size - overlap
+            remaining -= chunk_size - overlap
+        else:
+            current += chunk_size
+            remaining -= chunk_size
 
     result.append(" ".join(words[current:]))
 

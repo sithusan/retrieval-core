@@ -9,7 +9,7 @@ from lib.semantic_search import (
     search,
     chunk,
 )
-from lib.constants import SEARCH_LIMIT, CHUNK_SIZE
+from lib.constants import SEARCH_LIMIT, CHUNK_SIZE, OVERLAP
 
 
 def main():
@@ -40,6 +40,9 @@ def main():
     chunk_parser.add_argument(
         "--chunk-size", type=int, default=CHUNK_SIZE, help="Size of the chunk"
     )
+    chunk_parser.add_argument(
+        "--overlap", type=int, default=OVERLAP, help="Overlap of the chunk"
+    )
     args = parser.parse_args()
 
     match args.command:
@@ -54,7 +57,7 @@ def main():
         case "search":
             search(args.query, args.limit)
         case "chunk":
-            chunk(args.text, args.chunk_size)
+            chunk(args.text, args.chunk_size, args.overlap)
         case _:
             parser.print_help()
 
