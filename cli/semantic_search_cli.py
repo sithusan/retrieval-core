@@ -8,8 +8,9 @@ from lib.semantic_search import (
     embed_query_text,
     search,
     chunk,
+    semantic_chunk,
 )
-from lib.constants import SEARCH_LIMIT, CHUNK_SIZE, OVERLAP
+from lib.constants import SEARCH_LIMIT, CHUNK_SIZE, OVERLAP, MAX_CHUNK_SIZE
 
 
 def main():
@@ -43,6 +44,20 @@ def main():
     chunk_parser.add_argument(
         "--overlap", type=int, default=OVERLAP, help="Overlap of the chunk"
     )
+
+    semantic_chunk_parser = subparsers.add_parser(
+        "semantic_chunk", help="Chunk the text"
+    )
+    semantic_chunk_parser.add_argument("text", type=str, help="Text to semantic chunk")
+    semantic_chunk_parser.add_argument(
+        "--max-chunk-size",
+        type=int,
+        default=MAX_CHUNK_SIZE,
+        help="Max size of the semantic chunk",
+    )
+    semantic_chunk_parser.add_argument(
+        "--overlap", type=int, default=OVERLAP, help="Overlap of the semantic chunk"
+    )
     args = parser.parse_args()
 
     match args.command:
@@ -58,6 +73,8 @@ def main():
             search(args.query, args.limit)
         case "chunk":
             chunk(args.text, args.chunk_size, args.overlap)
+        case "semantic_chunk":
+            semantic_chunk(args.text, args.max_chunk_size, args.overlap)
         case _:
             parser.print_help()
 

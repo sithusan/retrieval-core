@@ -3,7 +3,8 @@ from lib.search_utils import get_path, ensure_dirs_exist, load_movies
 from numpy.typing import NDArray
 import numpy as np
 import os
-from lib.constants import SEARCH_LIMIT, CHUNK_SIZE, OVERLAP
+from lib.constants import SEARCH_LIMIT, CHUNK_SIZE, OVERLAP, MAX_CHUNK_SIZE
+import re
 
 
 class SemanticSearch:
@@ -147,6 +148,38 @@ def chunk(text: str, chunk_size: int, overlap: int) -> None:
     print(f"Chunking {len(text)} characters")
     for i, value in enumerate(chunked, 1):
         print(f"{i}. {value}")
+
+
+def semantic_chunk(text: str, chunk_size: int, overlap: int) -> None:
+    chunked = semantic_chunking(text, chunk_size, overlap)
+
+    print(f"Semantically chunking {len(text)} characters")
+    for i, value in enumerate(chunked, 1):
+        print(f"{i}. {value}")
+
+
+def semantic_chunking(
+    text: str, max_chunk_size: int = MAX_CHUNK_SIZE, overlap: int = OVERLAP
+) -> None:
+    words = re.split(r"(?<=[.!?])\s+", text)
+
+    result = []
+    remaining = len(words)
+    current = 0
+
+    while remaining > max_chunk_size:
+        result.append(" ".join(words[current : current + max_chunk_size]))
+
+        if overlap > 0:
+            current += max_chunk_size - overlap
+            remaining -= max_chunk_size - overlap
+        else:
+            current += max_chunk_size
+            remaining -= max_chunk_size
+
+    result.append(" ".join(words[current:]))
+
+    return result
 
 
 def fixed_size_chunking(
