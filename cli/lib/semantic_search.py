@@ -160,7 +160,9 @@ def semantic_chunk(text: str, chunk_size: int, overlap: int) -> None:
 
 def semantic_chunking(
     text: str, max_chunk_size: int = MAX_CHUNK_SIZE, overlap: int = OVERLAP
-) -> None:
+) -> list[str]:
+    # The difference is only the how we split the original text. In semantic chunk, we assume it's a full sentence based by the delimeters. (., !, ?)
+    # Too early to do the abstractions.
     words = re.split(r"(?<=[.!?])\s+", text)
 
     result = []
