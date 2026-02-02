@@ -9,8 +9,8 @@ import re
 
 class SemanticSearch:
 
-    def __init__(self):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+    def __init__(self, model_name: str):
+        self.model = SentenceTransformer(model_name)
         self.embeddings: NDArray[np.floating] = None
         self.documents: list[dict] = None
         self.document_map: dict[int, dict] = {}
