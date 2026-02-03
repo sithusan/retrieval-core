@@ -1,6 +1,7 @@
 from lib.search_utils import ensure_dirs_exist, get_path, load_movies
 from lib.semantic_search import SemanticSearch, semantic_chunking
 from numpy.typing import NDArray
+from lib.constants import SEARCH_LIMIT
 import numpy as np
 import json
 import os
@@ -8,12 +9,15 @@ import os
 
 class ChunkedSematicSearch(SemanticSearch):
 
-    def __init__(self, model_name="all-MiniLM-L6-v2") -> None:
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
         super().__init__(model_name)
         self.chunk_embeddings = None
         self.chunk_metadata = None
         self.chunk_embedding_path = get_path("cache/chunk_embeddings.npy")
         self.chunk_metadata_path = get_path("cache/chunk_metadata.json")
+
+    def search_chunks(self, query: str, limit: int = SEARCH_LIMIT):
+        print("search chunks")
 
     def build_chunk_embeddings(self, documents: list[dict]) -> NDArray[np.floating]:
         self.documents = documents
@@ -82,3 +86,16 @@ def embed_chunks() -> None:
     chunk_embeddings = chunkedSematicSearch.load_or_create_chunk_embeddings(movies)
 
     print(f"Generated {len(chunk_embeddings)} chunked embeddings")
+
+
+def search_chunked(query: str, limit: int) -> None:
+    try:
+        movies = load_movies()
+
+        chunkedSematicSearch = ChunkedSematicSearch()
+        chunkedSematicSearch.load_or_create_embeddings(movies)
+        chunkedSematicSearch.search_chunks(query, limit)
+
+    except Exception as err:
+        print(err)
+        exit(1)
