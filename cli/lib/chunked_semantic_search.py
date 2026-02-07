@@ -7,7 +7,7 @@ import json
 import os
 
 
-class ChunkedSematicSearch(SemanticSearch):
+class ChunkedSemanticSearch(SemanticSearch):
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
         super().__init__(model_name)
@@ -25,7 +25,7 @@ class ChunkedSematicSearch(SemanticSearch):
             score = cosine_similarity(query_embedding, chunk_embedding)
             chunk_scores.append(
                 {
-                    "chunk_idx": i, # Need to check whether we need the chunk id of each document or global id.
+                    "chunk_idx": i,  # Need to check whether we need the chunk id of each document or global id.
                     "movie_idx": self.chunk_metadatas[i]["movie_idx"],
                     "score": score,
                 }
@@ -131,8 +131,8 @@ class ChunkedSematicSearch(SemanticSearch):
 def embed_chunks() -> None:
     movies = load_movies()
 
-    chunkedSematicSearch = ChunkedSematicSearch()
-    chunk_embeddings = chunkedSematicSearch.load_or_create_chunk_embeddings(movies)
+    chunkedSemanticSearch = ChunkedSemanticSearch()
+    chunk_embeddings = chunkedSemanticSearch.load_or_create_chunk_embeddings(movies)
 
     print(f"Generated {len(chunk_embeddings)} chunked embeddings")
 
@@ -141,10 +141,10 @@ def search_chunked(query: str, limit: int) -> None:
     try:
         movies = load_movies()
 
-        chunkedSematicSearch = ChunkedSematicSearch()
-        chunkedSematicSearch.load_or_create_chunk_embeddings(movies)
+        chunkedSemanticSearch = ChunkedSemanticSearch()
+        chunkedSemanticSearch.load_or_create_chunk_embeddings(movies)
 
-        result = chunkedSematicSearch.search_chunks(query, limit)
+        result = chunkedSemanticSearch.search_chunks(query, limit)
 
         for i, value in enumerate(result, 1):
             print(f"\n{i}. {value['title']} (score: {value['score']:.4f})")
