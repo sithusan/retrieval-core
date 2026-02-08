@@ -1,5 +1,6 @@
 import argparse
-from lib.hybrid_search import normalize
+from lib.hybrid_search import normalize, weighted_search
+from lib.constants import SEARCH_LIMIT, ALPHA
 
 
 def main() -> None:
@@ -9,11 +10,24 @@ def main() -> None:
     normalize_parser = subparsers.add_parser("normalize")
     normalize_parser.add_argument("scores", type=float, nargs="+")
 
+    weighted_search_parser = subparsers.add_parser("weighted-search")
+    weighted_search_parser.add_argument(
+        "--alpha",
+        type=int,
+        default=ALPHA,
+        help="Alpha to dynamically control the weighting between the scores",
+    )
+    weighted_search_parser.add_argument(
+        "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
+    )
+
     args = parser.parse_args()
 
     match args.command:
         case "normalize":
             normalize(args.scores)
+        case "weighted-search":
+            weighted_search()
         case _:
             parser.print_help()
 

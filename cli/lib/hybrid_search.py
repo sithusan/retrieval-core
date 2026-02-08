@@ -55,3 +55,7 @@ def normalize_scores(scores: list[float]) -> list[float]:
         result.append(normalized_score)
 
     return result
+
+
+def weighted_search() -> None:
+    print("This is weighted search")
