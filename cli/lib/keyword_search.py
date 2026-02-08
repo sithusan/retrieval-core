@@ -138,9 +138,8 @@ class InvertedIndex:
         for key in sortedScores:
             movie = self.docmap[key]
             score = sortedScores[key]
-            movie_with_score = f"({movie['id']}) {movie['title']} - Score: {score:.2f}"
 
-            result.append(movie_with_score)
+            result.append({"id": movie["id"], "title": movie["title"], "score": score})
 
             if len(result) == limit:
                 return result
@@ -230,7 +229,9 @@ def bm25_search_command(query: str, limit: int) -> None:
         result = invertedIndex.bm25_search(query, limit)
 
         for key, value in enumerate(result):
-            print(f"{key+1}. {value}")
+            print(
+                f"{key+1}. ({value['id']}) {value['title']} - Score: {value['score']:.2f}"
+            )
 
     except Exception as err:
         print(err)
