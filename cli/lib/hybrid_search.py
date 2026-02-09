@@ -2,6 +2,8 @@ import os
 
 from lib.keyword_search import InvertedIndex
 from lib.chunked_semantic_search import ChunkedSemanticSearch
+from lib.constants import SEARCH_LIMIT, ALPHA
+from lib.search_utils import load_movies
 
 
 class HybridSearch:
@@ -19,8 +21,43 @@ class HybridSearch:
         self.idx.load()
         return self.idx.bm25_search(query, limit)
 
-    def weighted_search(self, query, alpha, limit=5):
-        raise NotImplementedError("Weighted hybrid search is not implemented yet.")
+    def weighted_search(
+        self, query: str, alpha: float = ALPHA, limit: int = SEARCH_LIMIT
+    ) -> dict:
+        bm_25_search_result = self._bm25_search(query, limit * 500)
+        chunked_semantic_search_result = self.semantic_search.search_chunks(
+            query, limit * 500
+        )
+
+        bm_25_normalized_scores = normalize_scores(
+            [v.get("score") for v in bm_25_search_result]
+        )
+        semantic_normalized_scores = normalize_scores(
+            [v.get("score") for v in chunked_semantic_search_result]
+        )
+
+        result = {}
+
+        for i, needle in enumerate(bm_25_search_result):
+            for j, heystack in enumerate(chunked_semantic_search_result):
+                if needle["id"] == heystack["id"]:
+                    hs = hybrid_score(
+                        bm_25_normalized_scores[i], semantic_normalized_scores[j], alpha
+                    )
+                    scores = {
+                        "bm25_score": bm_25_normalized_scores[i],
+                        "semantic_score": semantic_normalized_scores[j],
+                        "hybrid_score": hs,
+                    }
+                    document = self.idx.docmap[needle["id"]]
+                    result[needle["id"]] = scores | document
+                    break
+
+        return dict(
+            sorted(
+                result.items(), key=lambda item: item[1]["hybrid_score"], reverse=True
+            )[:limit]
+        )
 
     def rrf_search(self, query, k, limit=10):
         raise NotImplementedError("RRF hybrid search is not implemented yet.")
@@ -57,5 +94,22 @@ def normalize_scores(scores: list[float]) -> list[float]:
     return result
 
 
-def weighted_search() -> None:
-    print("This is weighted search")
+def hybrid_score(bm25_score: float, semantic_score: float, alpha: float = ALPHA):
+    return alpha * bm25_score + (1 - alpha) * semantic_score
+
+
+def weighted_search(query: str, alpha: float, limit: int) -> None:
+    try:
+        movies = load_movies()
+
+        hybridSearch = HybridSearch(movies)
+        result = hybridSearch.weighted_search(query, alpha, limit)
+
+        for i, (_, v) in enumerate(result.items(), 1):
+            print(f"{i}. {v['title']}")
+            print(f"Hybrid Score: {v['hybrid_score']}")
+            print(f"BM25: {v['bm25_score']}, Semantic {v['semantic_score']}")
+            print(v["description"][:100])
+
+    except Exception as e:
+        print(e)

@@ -11,9 +11,10 @@ def main() -> None:
     normalize_parser.add_argument("scores", type=float, nargs="+")
 
     weighted_search_parser = subparsers.add_parser("weighted-search")
+    weighted_search_parser.add_argument("query", type=str, help="Search Query")
     weighted_search_parser.add_argument(
         "--alpha",
-        type=int,
+        type=float,
         default=ALPHA,
         help="Alpha to dynamically control the weighting between the scores",
     )
@@ -27,7 +28,7 @@ def main() -> None:
         case "normalize":
             normalize(args.scores)
         case "weighted-search":
-            weighted_search()
+            weighted_search(args.query, args.alpha, args.limit)
         case _:
             parser.print_help()
 
