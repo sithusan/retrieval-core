@@ -36,22 +36,60 @@ class HybridSearch:
             [v.get("score") for v in chunked_semantic_search_result]
         )
 
-        result = {}
+        # Needs to rewrite this, because of the O(n2), and the we are only taking the intersections.
+        # Hybrid search needs to include all the candidate docs.
+        # Because one sided docs will still make into the result if the score is too much.
+        combined_result = {}
 
-        for i, needle in enumerate(bm_25_search_result):
-            for j, heystack in enumerate(chunked_semantic_search_result):
-                if needle["id"] == heystack["id"]:
-                    hs = hybrid_score(
-                        bm_25_normalized_scores[i], semantic_normalized_scores[j], alpha
-                    )
-                    scores = {
-                        "bm25_score": bm_25_normalized_scores[i],
-                        "semantic_score": semantic_normalized_scores[j],
-                        "hybrid_score": hs,
-                    }
-                    document = self.idx.docmap[needle["id"]]
-                    result[needle["id"]] = scores | document
-                    break
+        for i, v in enumerate(bm_25_search_result):
+            document = self.idx.docmap[v["id"]]
+            scores = {
+                "bm25_score": v["score"],
+                "normalized_bm_25_score": bm_25_normalized_scores[i],
+                "semantic_score": 0.0,
+                "normalized_semantic_score": 0.0,
+                "hybrid_score": 0.0,
+            }
+            combined_result[v["id"]] = document | scores
+
+        for i, v in enumerate(chunked_semantic_search_result):
+            if v["id"] not in combined_result:
+                document = self.idx.docmap[v["id"]]
+                scores = {
+                    "bm25_score": 0.0,
+                    "normalized_bm_25_score": 0.0,
+                    "semantic_score": v["score"],
+                    "normalized_semantic_score": semantic_normalized_scores[i],
+                    "hybrid_score": 0.0,
+                }
+                combined_result[v["id"]] = document | scores
+            else:
+                combined_result[v["id"]]["semantic_score"] = v["score"]
+                combined_result[v["id"]]["normalized_semantic_score"] = (
+                    semantic_normalized_scores[i]
+                )
+
+        result = {}
+        for k, v in combined_result.items():
+            v["hybrid_score"] = hybrid_score(
+                v["normalized_bm_25_score"], v["normalized_semantic_score"], alpha
+            )
+            result[k] = v
+
+        # for i, needle in enumerate(bm_25_search_result):
+        #     for j, heystack in enumerate(chunked_semantic_search_result):
+        #         if needle["id"] == heystack["id"]:
+        #             hs = hybrid_score(
+        #                 bm_25_normalized_scores[i], semantic_normalized_scores[j], alpha
+        #             )
+        #             scores = {
+        #                 "bm25_score": bm_25_normalized_scores[i],
+        #                 "semantic_score": semantic_normalized_scores[j],
+        #                 "hybrid_score": hs,
+        #             }
+        #             document = self.idx.docmap[needle["id"]]
+        #             result[needle["id"]] = scores | document
+        #             break
 
         return dict(
             sorted(
