@@ -151,3 +151,7 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
 
     except Exception as e:
         print(e)
+
+
+def rrf_search(query: str, k: int, limit: int) -> None:
+    print("RRF Search")
