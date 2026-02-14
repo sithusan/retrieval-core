@@ -2,7 +2,7 @@ import os
 
 from lib.keyword_search import InvertedIndex
 from lib.chunked_semantic_search import ChunkedSemanticSearch
-from lib.constants import SEARCH_LIMIT, ALPHA
+from lib.constants import SEARCH_LIMIT, EXTENDED_LIMIT, ALPHA, RRF_WEIGHT
 from lib.search_utils import load_movies
 
 
@@ -24,9 +24,9 @@ class HybridSearch:
     def weighted_search(
         self, query: str, alpha: float = ALPHA, limit: int = SEARCH_LIMIT
     ) -> dict:
-        bm_25_search_result = self._bm25_search(query, limit * 500)
+        bm_25_search_result = self._bm25_search(query, limit * EXTENDED_LIMIT)
         chunked_semantic_search_result = self.semantic_search.search_chunks(
-            query, limit * 500
+            query, limit * EXTENDED_LIMIT
         )
 
         bm_25_normalized_scores = normalize_scores(
@@ -36,7 +36,6 @@ class HybridSearch:
             [v.get("score") for v in chunked_semantic_search_result]
         )
 
-        # Needs to rewrite this, because of the O(n2), and the we are only taking the intersections.
         # Hybrid search needs to include all the candidate docs.
         # Because one sided docs will still make into the result if the score is too much.
         combined_result = {}
@@ -76,21 +75,6 @@ class HybridSearch:
             )
             result[k] = v
 
-        # for i, needle in enumerate(bm_25_search_result):
-        #     for j, heystack in enumerate(chunked_semantic_search_result):
-        #         if needle["id"] == heystack["id"]:
-        #             hs = hybrid_score(
-        #                 bm_25_normalized_scores[i], semantic_normalized_scores[j], alpha
-        #             )
-        #             scores = {
-        #                 "bm25_score": bm_25_normalized_scores[i],
-        #                 "semantic_score": semantic_normalized_scores[j],
-        #                 "hybrid_score": hs,
-        #             }
-        #             document = self.idx.docmap[needle["id"]]
-        #             result[needle["id"]] = scores | document
-        #             break
-
         return dict(
             sorted(
                 result.items(), key=lambda item: item[1]["hybrid_score"], reverse=True
@@ -98,7 +82,46 @@ class HybridSearch:
         )
 
     def rrf_search(self, query, k, limit=10):
-        raise NotImplementedError("RRF hybrid search is not implemented yet.")
+        bm_25_search_result = self._bm25_search(query, limit * 500)
+        chunked_semantic_search_result = self.semantic_search.search_chunks(
+            query, limit * 500
+        )
+
+        # Hybrid search needs to include all the candidate docs.
+        # Because one sided docs will still make into the result if the score is too much.
+        combined_result = {}
+
+        for i, v in enumerate(bm_25_search_result):
+            document = self.idx.docmap[v["id"]]
+            scores = {
+                "bm25_rank": i,
+                "semantic_rank": 0,
+                "rrf_score": rrf_score(i, k),
+            }
+            combined_result[v["id"]] = document | scores
+
+        for i, v in enumerate(chunked_semantic_search_result):
+            if v["id"] not in combined_result:
+                document = self.idx.docmap[v["id"]]
+                scores = {
+                    "bm25_rank": 0,
+                    "semantic_rank": i,
+                    "rrf_score": rrf_score(i, k),
+                }
+                combined_result[v["id"]] = document | scores
+            else:
+                combined_result[v["id"]]["semantic_rank"] = i
+                combined_result[v["id"]]["rrf_score"] = combined_result[v["id"]][
+                    "rrf_score"
+                ] + rrf_score(i, k)
+
+        return dict(
+            sorted(
+                combined_result.items(),
+                key=lambda item: item[1]["rrf_score"],
+                reverse=True,
+            )[:limit]
+        )
 
 
 def normalize(scores: list[float]) -> None:
@@ -136,6 +159,10 @@ def hybrid_score(bm25_score: float, semantic_score: float, alpha: float = ALPHA)
     return alpha * bm25_score + (1 - alpha) * semantic_score
 
 
+def rrf_score(rank: int, k: int = RRF_WEIGHT):
+    return 1 / (k + rank)
+
+
 def weighted_search(query: str, alpha: float, limit: int) -> None:
     try:
         movies = load_movies()
@@ -146,7 +173,7 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
         for i, (_, v) in enumerate(result.items(), 1):
             print(f"{i}. {v['title']}")
             print(f"Hybrid Score: {v['hybrid_score']}")
-            print(f"BM25: {v['bm25_score']}, Semantic {v['semantic_score']}")
+            print(f"BM25: {v['bm25_score']}, Semantic :{v['semantic_score']}")
             print(v["description"][:100])
 
     except Exception as e:
@@ -154,4 +181,16 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
 
 
 def rrf_search(query: str, k: int, limit: int) -> None:
-    print("RRF Search")
+    try:
+        movies = load_movies()
+
+        hybridSearch = HybridSearch(movies)
+        result = hybridSearch.rrf_search(query, k, limit)
+
+        for i, (_, v) in enumerate(result.items(), 1):
+            print(f"{i}. {v['title']}")
+            print(f"RRF Score: {v['rrf_score']}")
+            print(f"BM25 Rank: {v['bm25_rank']}, Semantic Rank: {v['semantic_rank']}")
+            print(v["description"][:100])
+    except Exception as e:
+        print(e)
