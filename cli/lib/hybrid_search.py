@@ -95,7 +95,7 @@ class HybridSearch:
             document = self.idx.docmap[v["id"]]
             scores = {
                 "bm25_rank": i,
-                "semantic_rank": 0,
+                "semantic_rank": None,
                 "rrf_score": rrf_score(i, k),
             }
             combined_result[v["id"]] = document | scores
@@ -104,7 +104,7 @@ class HybridSearch:
             if v["id"] not in combined_result:
                 document = self.idx.docmap[v["id"]]
                 scores = {
-                    "bm25_rank": 0,
+                    "bm25_rank": None,
                     "semantic_rank": i,
                     "rrf_score": rrf_score(i, k),
                 }
