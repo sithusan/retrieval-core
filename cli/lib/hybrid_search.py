@@ -4,7 +4,11 @@ from lib.keyword_search import InvertedIndex
 from lib.chunked_semantic_search import ChunkedSemanticSearch
 from lib.constants import SEARCH_LIMIT, EXTENDED_LIMIT, ALPHA, RRF_WEIGHT
 from lib.search_utils import load_movies
-from lib.prompts import get_spell_correcter_prompt, get_query_rewriter_prompt
+from lib.prompts import (
+    get_spell_correcter_prompt,
+    get_query_rewriter_prompt,
+    get_query_expander_prompt,
+)
 from dotenv import load_dotenv
 from google import genai
 
@@ -209,6 +213,8 @@ def get_enhanced_query(query: str, enhance: str | None) -> str:
             prompt = get_spell_correcter_prompt(query)
         case "rewrite":
             prompt = get_query_rewriter_prompt(query)
+        case "expand":
+            prompt = get_query_expander_prompt(query)
 
     enhanced_query = result_from_llm(prompt)
     print(f"Enhanced query ({enhance}): '{query}' -> '{enhanced_query}'\n")
