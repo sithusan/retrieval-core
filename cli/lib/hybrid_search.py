@@ -4,6 +4,9 @@ from lib.keyword_search import InvertedIndex
 from lib.chunked_semantic_search import ChunkedSemanticSearch
 from lib.constants import SEARCH_LIMIT, EXTENDED_LIMIT, ALPHA, RRF_WEIGHT
 from lib.search_utils import load_movies
+from lib.prompts import get_spell_correcter_prompt
+from dotenv import load_dotenv
+from google import genai
 
 
 class HybridSearch:
@@ -180,12 +183,18 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
         print(e)
 
 
-def rrf_search(query: str, k: int, limit: int) -> None:
+def rrf_search(query: str, k: int, limit: int, enhance: str) -> None:
     try:
+        enhanced_query = query
+        if enhance:
+            prompt = get_spell_correcter_prompt(query)
+            enhanced_query = result_from_llm(prompt)
+            print(f"Enhanced query ({enhance}): '{query}' -> '{enhanced_query}'\n")
+
         movies = load_movies()
 
         hybridSearch = HybridSearch(movies)
-        result = hybridSearch.rrf_search(query, k, limit)
+        result = hybridSearch.rrf_search(enhanced_query, k, limit)
 
         for i, (_, v) in enumerate(result.items(), 1):
             print(f"{i}. {v['title']}")
@@ -194,3 +203,15 @@ def rrf_search(query: str, k: int, limit: int) -> None:
             print(v["description"][:100])
     except Exception as e:
         print(e)
+
+
+def result_from_llm(query: str) -> str:
+    load_dotenv()
+    api_key = os.environ.get("GEMINI_API_KEY")
+
+    client = genai.Client(api_key=api_key)
+    result = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=query,
+    )
+    return result.text
