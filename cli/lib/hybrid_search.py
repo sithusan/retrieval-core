@@ -4,7 +4,7 @@ from lib.keyword_search import InvertedIndex
 from lib.chunked_semantic_search import ChunkedSemanticSearch
 from lib.constants import SEARCH_LIMIT, EXTENDED_LIMIT, ALPHA, RRF_WEIGHT
 from lib.search_utils import load_movies
-from lib.prompts import get_spell_correcter_prompt
+from lib.prompts import get_spell_correcter_prompt, get_query_rewriter_prompt
 from dotenv import load_dotenv
 from google import genai
 
@@ -185,12 +185,7 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
 
 def rrf_search(query: str, k: int, limit: int, enhance: str) -> None:
     try:
-        enhanced_query = query
-        if enhance:
-            prompt = get_spell_correcter_prompt(query)
-            enhanced_query = result_from_llm(prompt)
-            print(f"Enhanced query ({enhance}): '{query}' -> '{enhanced_query}'\n")
-
+        enhanced_query = get_enhanced_query(query, enhance)
         movies = load_movies()
 
         hybridSearch = HybridSearch(movies)
@@ -203,6 +198,22 @@ def rrf_search(query: str, k: int, limit: int, enhance: str) -> None:
             print(v["description"][:100])
     except Exception as e:
         print(e)
+
+
+def get_enhanced_query(query: str, enhance: str | None) -> str:
+    if not enhance:
+        return query
+
+    match enhance:
+        case "spelling":
+            prompt = get_spell_correcter_prompt(query)
+        case "rewrite":
+            prompt = get_query_rewriter_prompt(query)
+
+    enhanced_query = result_from_llm(prompt)
+    print(f"Enhanced query ({enhance}): '{query}' -> '{enhanced_query}'\n")
+
+    return enhanced_query
 
 
 def result_from_llm(query: str) -> str:
