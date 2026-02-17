@@ -1,4 +1,5 @@
 import os
+import time
 
 from lib.keyword_search import InvertedIndex
 from lib.chunked_semantic_search import ChunkedSemanticSearch
@@ -8,6 +9,7 @@ from lib.prompts import (
     get_spell_correcter_prompt,
     get_query_rewriter_prompt,
     get_query_expander_prompt,
+    get_rerank_prompt,
 )
 from dotenv import load_dotenv
 from google import genai
@@ -187,13 +189,11 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
         print(e)
 
 
-def rrf_search(query: str, k: int, limit: int, enhance: str) -> None:
+def rrf_search(
+    query: str, k: int, limit: int, enhance: str | None, rerank_method: str | None
+) -> None:
     try:
-        enhanced_query = get_enhanced_query(query, enhance)
-        movies = load_movies()
-
-        hybridSearch = HybridSearch(movies)
-        result = hybridSearch.rrf_search(enhanced_query, k, limit)
+        result = rrf_search_with_reranking(query, k, limit, enhance, rerank_method)
 
         for i, (_, v) in enumerate(result.items(), 1):
             print(f"{i}. {v['title']}")
@@ -202,6 +202,23 @@ def rrf_search(query: str, k: int, limit: int, enhance: str) -> None:
             print(v["description"][:100])
     except Exception as e:
         print(e)
+
+
+def rrf_search_with_reranking(
+    query: str, k: int, limit: int, enhance: str | None, rerank_method: str | None
+) -> dict:
+    enhanced_query = get_enhanced_query(query, enhance)
+    rerank_limit = get_rerank_limit(limit, rerank_method)
+    movies = load_movies()
+
+    hybridSearch = HybridSearch(movies)
+    rrf_result = hybridSearch.rrf_search(enhanced_query, k, rerank_limit)
+
+    match rerank_method:
+        case "individual":
+            return result_from_individual_rerank(rrf_result, query, limit)
+
+    return rrf_result
 
 
 def get_enhanced_query(query: str, enhance: str | None) -> str:
@@ -220,6 +237,36 @@ def get_enhanced_query(query: str, enhance: str | None) -> str:
     print(f"Enhanced query ({enhance}): '{query}' -> '{enhanced_query}'\n")
 
     return enhanced_query
+
+
+def result_from_individual_rerank(
+    initial_search_result: dict, query: str, limit: int
+) -> dict:
+    result = {}
+    for k, v in initial_search_result.items():
+        time.sleep(3)
+        prompt = get_rerank_prompt(query, v)
+        v["rerank_score"] = result_from_llm(prompt)
+        result[k] = v
+
+    return dict(
+        list(
+            sorted(
+                result.items(),
+                key=lambda item: item[1]["rerank_score"],
+                reverse=True,
+            )[:limit]
+        )
+    )
+
+
+def get_rerank_limit(limit: int, rerank_method: str | None):
+    if not rerank_method:
+        return limit
+
+    match rerank_method:
+        case "individual":
+            return limit * 5
 
 
 def result_from_llm(query: str) -> str:

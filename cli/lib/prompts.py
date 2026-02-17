@@ -35,3 +35,16 @@ def get_query_expander_prompt(query: str) -> str:
         - "comedy with bear" -> "comedy funny bear humor lighthearted"
         Query: "{query}"
         """
+
+
+def get_rerank_prompt(query: str, doc: dict) -> str:
+    return f"""Rate how well this movie matches the search query.
+    Query: "{query}"
+    Movie: {doc.get("title", "")} - {doc.get("description", "")}
+    Consider:
+    - Direct relevance to query
+    - User intent (what they're looking for)
+    - Content appropriateness
+    Rate 0-10 (10 = perfect match).
+    Give me ONLY the number in your response, no other text or explanation.
+    Score:"""
