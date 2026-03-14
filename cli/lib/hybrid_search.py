@@ -10,9 +10,11 @@ from lib.prompts import (
     get_query_rewriter_prompt,
     get_query_expander_prompt,
     get_rerank_prompt,
+    get_batch_rerank_prompt,
 )
 from dotenv import load_dotenv
 from google import genai
+import json
 
 
 class HybridSearch:
@@ -217,6 +219,8 @@ def rrf_search_with_reranking(
     match rerank_method:
         case "individual":
             return result_from_individual_rerank(rrf_result, query, limit)
+        case "batch":
+            return result_from_batch_rerank(rrf_result, query, limit)
 
     return rrf_result
 
@@ -260,12 +264,33 @@ def result_from_individual_rerank(
     )
 
 
+def result_from_batch_rerank(
+    initial_search_result: dict, query: str, limit: int
+) -> dict:
+    doc_list_str = ",".join(str(value) for value in initial_search_result.values())
+    prompt = get_batch_rerank_prompt(query, doc_list_str)
+
+    movie_ids_json = result_from_llm(prompt)
+    movie_ids = json.loads(movie_ids_json)
+
+    result = {}
+
+    for i, movie_id in enumerate(movie_ids, 0):
+        if i == limit:
+            return result
+        result[movie_id] = initial_search_result.get(movie_id)
+
+    return result
+
+
 def get_rerank_limit(limit: int, rerank_method: str | None):
     if not rerank_method:
         return limit
 
     match rerank_method:
         case "individual":
+            return limit * 5
+        case "batch":
             return limit * 5
 
 

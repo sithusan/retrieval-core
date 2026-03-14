@@ -42,9 +42,7 @@ def main() -> None:
     rrf_search_parser.add_argument(
         "--rerank-method",
         type=str,
-        choices=[
-            "individual",
-        ],
+        choices=["individual", "batch"],
         help="Query rerank method",
     )
 

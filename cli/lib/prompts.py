@@ -48,3 +48,13 @@ def get_rerank_prompt(query: str, doc: dict) -> str:
     Rate 0-10 (10 = perfect match).
     Give me ONLY the number in your response, no other text or explanation.
     Score:"""
+
+
+def get_batch_rerank_prompt(query: str, doc_list_str: dict) -> str:
+    return f"""Rank the movies listed below by relevance to the following search query.
+        Query: "{query}"
+        Movies: {doc_list_str}
+        Return ONLY the movie IDs in order of relevance (best match first). Return a valid JSON list, nothing else.
+        For example:
+        [75, 12, 34, 2, 1]
+    Ranking:"""
