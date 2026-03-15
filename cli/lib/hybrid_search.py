@@ -15,6 +15,7 @@ from lib.prompts import (
 from dotenv import load_dotenv
 from google import genai
 import json
+from sentence_transformers import CrossEncoder
 
 
 class HybridSearch:
@@ -221,6 +222,8 @@ def rrf_search_with_reranking(
             return result_from_individual_rerank(rrf_result, query, limit)
         case "batch":
             return result_from_batch_rerank(rrf_result, query, limit)
+        case "cross_encoder":
+            return result_from_cross_encoder_rerank(rrf_result, query, limit)
 
     return rrf_result
 
@@ -283,6 +286,34 @@ def result_from_batch_rerank(
     return result
 
 
+def result_from_cross_encoder_rerank(
+    initial_search_result: dict, query: str, limit: int
+) -> dict:
+    pairs = []
+
+    for _, v in initial_search_result.items():
+        pairs.append([query, f"{v['title']} - {v['description']}"])
+
+    cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
+    scores = cross_encoder.predict(pairs)
+
+    search_result_with_score = {}
+
+    for i, (k, v) in enumerate(initial_search_result.items()):
+        v["cross_encoder_score"] = scores[i]
+        search_result_with_score[k] = v
+
+    return dict(
+        list(
+            sorted(
+                search_result_with_score.items(),
+                key=lambda item: item[1]["cross_encoder_score"],
+                reverse=True,
+            )[:limit]
+        )
+    )
+
+
 def get_rerank_limit(limit: int, rerank_method: str | None):
     if not rerank_method:
         return limit
@@ -291,6 +322,8 @@ def get_rerank_limit(limit: int, rerank_method: str | None):
         case "individual":
             return limit * 5
         case "batch":
+            return limit * 5
+        case "cross_encoder":
             return limit * 5
 
 
