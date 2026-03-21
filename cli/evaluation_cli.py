@@ -22,12 +22,17 @@ def main():
         golden_dataset = json.load(file)
 
     for v in golden_dataset["test_cases"]:
-        result = rrf_search_with_reranking(v["query"], 60, limit, None, None)
-        precision = len(v["relevant_docs"]) / len(result)
-        print(len(result), len(v["relevant_docs"]))
-        recall = len(result) / len(v["relevant_docs"])
+        retrieved = rrf_search_with_reranking(v["query"], 60, limit, None, None)
+        relevent_retrieved = {}
 
-        retrieved_titles = ", ".join(doc["title"] for doc in result.values())
+        for k, item in retrieved.items():
+            if item["title"] in v["relevant_docs"]:
+                relevent_retrieved[k] = v
+
+        precision = len(relevent_retrieved) / len(retrieved)
+        recall = len(relevent_retrieved) / len(v["relevant_docs"])
+
+        retrieved_titles = ", ".join(doc["title"] for doc in retrieved.values())
         relevant_titles = ", ".join(v["relevant_docs"])
 
         print(f"- Query: {v['query']}")
