@@ -11,6 +11,7 @@ from lib.prompts import (
     get_query_expander_prompt,
     get_rerank_prompt,
     get_batch_rerank_prompt,
+    get_evaluation_prompt,
 )
 from dotenv import load_dotenv
 from google import genai
@@ -193,18 +194,39 @@ def weighted_search(query: str, alpha: float, limit: int) -> None:
 
 
 def rrf_search(
-    query: str, k: int, limit: int, enhance: str | None, rerank_method: str | None
+    query: str,
+    k: int,
+    limit: int,
+    enhance: str | None,
+    rerank_method: str | None,
+    evaluate: bool,
 ) -> None:
     try:
         result = rrf_search_with_reranking(query, k, limit, enhance, rerank_method)
+        formatted_rrf_search_result = format_rrf_search_result(result)
 
-        for i, (_, v) in enumerate(result.items(), 1):
-            print(f"{i}. {v['title']}")
-            print(f"RRF Score: {v['rrf_score']}")
-            print(f"BM25 Rank: {v['bm25_rank']}, Semantic Rank: {v['semantic_rank']}")
-            print(v["description"][:100])
+        for v in formatted_rrf_search_result:
+            print(v)
+
+        if evaluate:
+            prompt = get_evaluation_prompt(query, formatted_rrf_search_result)
+            evaluations_json = result_from_llm(prompt)
+            evaluations = json.loads(evaluations_json)
+
+            for i, (_, v) in enumerate(result.items()):
+                print(f"{i+1}. {v['title']}: {evaluations[i]}/3")
     except Exception as e:
         print(e)
+
+
+def format_rrf_search_result(rrf_search_result: dict) -> list[str]:
+    formatted_result = []
+
+    for i, (_, v) in enumerate(rrf_search_result.items(), 1):
+        formatted_result.append(
+            f"{i}. {v['title']}\nRRF Score: {v['rrf_score']}\nBM25 Rank: {v['bm25_rank']}, Semantic Rank: {v['semantic_rank']}\n{v['description'][:100]}"
+        )
+    return formatted_result
 
 
 def rrf_search_with_reranking(
@@ -327,13 +349,13 @@ def get_rerank_limit(limit: int, rerank_method: str | None):
             return limit * 5
 
 
-def result_from_llm(query: str) -> str:
+def result_from_llm(prompt: str) -> str:
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
 
     client = genai.Client(api_key=api_key)
     result = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=query,
+        contents=prompt,
     )
     return result.text

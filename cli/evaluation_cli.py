@@ -31,6 +31,7 @@ def main():
 
         precision = len(relevent_retrieved) / len(retrieved)
         recall = len(relevent_retrieved) / len(v["relevant_docs"])
+        f1 = 2 * (precision * recall) / (precision + recall)
 
         retrieved_titles = ", ".join(doc["title"] for doc in retrieved.values())
         relevant_titles = ", ".join(v["relevant_docs"])
@@ -38,6 +39,7 @@ def main():
         print(f"- Query: {v['query']}")
         print(f"  - Precision@{limit}: {precision:.4f}")
         print(f"  - Recall@{limit}: {recall:.4f}")
+        print(f"  - F1 Score: {f1:.4f}")
         print(f"  - Retrieved: {retrieved_titles}")
         print(f"  - Relevant: {relevant_titles}")
 
