@@ -1,5 +1,5 @@
 import argparse
-from lib.augmented_generation import rag, summarize
+from lib.augmented_generation import rag, summarize, citations
 from lib.constants import RRF_WEIGHT, SEARCH_LIMIT
 
 
@@ -20,6 +20,14 @@ def main():
         "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
     )
 
+    citations_parser = subparsers.add_parser(
+        "citations", help="cite the answser of the found movies"
+    )
+    citations_parser.add_argument("query", type=str, help="Search query for citation")
+    citations_parser.add_argument(
+        "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
+    )
+
     args = parser.parse_args()
 
     match args.command:
@@ -27,6 +35,8 @@ def main():
             rag(args.query, RRF_WEIGHT, SEARCH_LIMIT)
         case "summarize":
             summarize(args.query, RRF_WEIGHT, args.limit)
+        case "citations":
+            citations(args.query, RRF_WEIGHT, args.limit)
         case _:
             parser.print_help()
 
