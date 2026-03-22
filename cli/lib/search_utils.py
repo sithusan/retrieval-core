@@ -1,5 +1,6 @@
 import os
 import json
+import numpy as np
 
 
 def load_movies() -> list[dict]:
@@ -25,3 +26,14 @@ def get_path(relative_path: str) -> str:
     abs_path = os.path.abspath(relative_path)
 
     return os.path.normpath(abs_path)
+
+
+def cosine_similarity(vec1, vec2) -> float:
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)  # magnitude
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
