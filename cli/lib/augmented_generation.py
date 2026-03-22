@@ -3,6 +3,7 @@ from lib.prompts import (
     get_search_answer_prompt,
     get_summarize_prompt,
     get_citations_prompt,
+    get_question_answering_prompt,
 )
 
 
@@ -37,3 +38,14 @@ def citations(query: str, rrf_weight: int, limit: int) -> None:
     for _, v in result.items():
         print(f"-{v['title']}")
     print(cited_answer)
+
+
+def question(query: str, rrf_weight: int, limit: int) -> None:
+    result = rrf_search_with_reranking(query, rrf_weight, limit, None, None)
+    prompt = get_question_answering_prompt(query, result)
+    answer = result_from_llm(prompt)
+
+    print("Search Results")
+    for _, v in result.items():
+        print(f"-{v['title']}")
+    print(answer)

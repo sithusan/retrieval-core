@@ -1,5 +1,5 @@
 import argparse
-from lib.augmented_generation import rag, summarize, citations
+from lib.augmented_generation import rag, summarize, citations, question
 from lib.constants import RRF_WEIGHT, SEARCH_LIMIT
 
 
@@ -28,6 +28,16 @@ def main():
         "--limit", type=int, default=SEARCH_LIMIT, help="Search query Limit"
     )
 
+    question_answering_parser = subparsers.add_parser(
+        "question", help="Ask the question"
+    )
+    question_answering_parser.add_argument(
+        "question", type=str, help="Question to be answered"
+    )
+    question_answering_parser.add_argument(
+        "--limit", type=int, default=SEARCH_LIMIT, help="Question Limit"
+    )
+
     args = parser.parse_args()
 
     match args.command:
@@ -37,6 +47,8 @@ def main():
             summarize(args.query, RRF_WEIGHT, args.limit)
         case "citations":
             citations(args.query, RRF_WEIGHT, args.limit)
+        case "question":
+            question(args.question, RRF_WEIGHT, args.limit)
         case _:
             parser.print_help()
 

@@ -97,7 +97,7 @@ def get_summarize_prompt(query: str, results: dict) -> str:
     """
 
 
-def get_citations_prompt(query: str, docs: dict) -> dict:
+def get_citations_prompt(query: str, docs: dict) -> str:
     return f"""Answer the question or provide information based on the provided documents.
         This should be tailored to Hoopla users. Hoopla is a movie streaming service.
         If not enough information is available to give a good answer, say so but give as good of an answer as you can while citing the sources you have.
@@ -110,3 +110,16 @@ def get_citations_prompt(query: str, docs: dict) -> dict:
         - If the answer isn't in the documents, say "I don't have enough information"
         - Be direct and informative
         Answer:"""
+
+
+def get_question_answering_prompt(question: str, context: dict) -> str:
+    return f"""Answer the user's question based on the provided movies that are available on Hoopla.
+    This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+    Question: {question}
+    Documents:{context}
+    Instructions:
+    - Answer questions directly and concisely
+    - Be casual and conversational
+    - Don't be cringe or hype-y
+    - Talk like a normal person would in a chat conversation
+    Answer:"""
