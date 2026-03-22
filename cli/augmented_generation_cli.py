@@ -1,6 +1,5 @@
 import argparse
-from lib.hybrid_search import rrf_search_with_reranking, result_from_llm
-from lib.prompts import search_answer_prompt
+from lib.augmented_generation import rag
 from lib.constants import RRF_WEIGHT, SEARCH_LIMIT
 
 
@@ -17,18 +16,7 @@ def main():
 
     match args.command:
         case "rag":
-            query = args.query
-            result = rrf_search_with_reranking(
-                query, RRF_WEIGHT, SEARCH_LIMIT, None, None
-            )
-            prompt = search_answer_prompt(query, result)
-            rag_answer = result_from_llm(prompt)
-
-            print("Search Results")
-            for _, v in result.items():
-                print(f"-{v['title']}")
-            print(rag_answer)
-
+            rag(args.query, RRF_WEIGHT, SEARCH_LIMIT)
         case _:
             parser.print_help()
 
